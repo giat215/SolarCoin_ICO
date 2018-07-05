@@ -11,8 +11,8 @@ pragma solidity ^0.4.21;
 contract SolarCoin {
 
 	// Eventos
-	event NovaUsinaCriada(address indexed _usinaAddr, uint indexed _usinaID, uint256 indexed _goal);
-	event TokenTransferido(address indexed _from, address indexed _to, uint256 indexed _value);
+	event NovaUsinaCriada(uint indexed _usinaID, uint256 indexed _goal);
+	event TokenTransferido(uint indexed _from, address indexed _to, uint256 indexed _value);
 
 	// Dados dos Clientes
 	struct Client {
@@ -24,16 +24,17 @@ contract SolarCoin {
 
 	// Dados das Usinas
 	struct Usina {
-		address usinaAddr;
+		uint ID;
 		uint numClients;
 		uint initialTokenAmount;
+		uint meta;
 		mapping (uint => Client) clients;
 	}
 
 	uint public numUsinas;	// número de Usinas realizadas
 	mapping (uint => Usina) public usinas;	// Tabela Hash para encontrar dados das Usinas feitas
-	mapping (uint => address) private usinasToAddr;
 	mapping (address => Client) public BancoClientes;
+	mapping (uint => uint) private UsinasTokens;
 	mapping (address => uint256) public balances;	// Quantidade de tokens em um endereço
 	uint public totalSupply;
 	string public name;
@@ -46,41 +47,50 @@ contract SolarCoin {
 	}
 
 	// Função para criar uma nova Usina
-	function newUsina (uint goal, string passwd) public returns(uint usinaID) {
-		require (passwd == "mestre");
+	function newUsina (uint goal, uint _meta1 , uint passwd) public returns(uint usinaID) {
+		require (passwd == 1234);
 		usinaID = numUsinas++;
-		Usina u = usinas[usinaID];
-		u.usinaAddr = usinasToAddr[usinaID];
-		balances[u.usinaAddr] = goal;
+		Usina storage u = usinas[usinaID];
+		u.ID = usinaID;
+		u.meta = _meta1;
+		UsinasTokens[u.ID] = goal;
 		u.initialTokenAmount = goal;
 		balances[msg.sender] -= goal;
-		emit NovaUsinaCriada(u.usinaAddr, usinaID, goal);
+		emit NovaUsinaCriada(u.ID, goal);
 	}
 	
 	// Transferir Tokens para cliente que investiu na Usina "usinaID"
-	function TransferTokens (uint usinaID, address _to, uint cpf, string nome, uint _value, string passwd) public {
-		require (passwd == "mestre");
-		Usina u = usinas[usinaID];
-		Client c = u.clients[u.numClients++];
+	function TransferTokens (uint usinaID, address _to, uint8 cpf, string nome, uint _value, uint passwd) public {
+		require (passwd == 1234);
+		Usina storage u = usinas[usinaID];
+		require (UsinasTokens[u.ID] >= _value);
+		Client storage c = u.clients[u.numClients++];
 		c.addr = _to;
 		c.cpf = cpf;
 		c.nome = nome;
 		c.usina = usinaID;
 		BancoClientes[_to] = c;
 		balances[_to] += _value;
-		balances[u.usinaAddr] -= _value;
-		emit TokenTransferido(usinasToAddr[usinaID],_to,_value);
+		UsinasTokens[u.ID] -= _value;
+		emit TokenTransferido(UsinasTokens[u.ID],_to,_value);
 	}
 	
-	// Verificar quantidade de Tokens Vendidos 
-	function balanceOfUsina (uint _usinaID) public constant returns(uint vendidos) {
-		Usina u = usinas[_usinaID];
-		vendidos = u.initialTokenAmount - balances[u.usinaAddr];
+	// Verificar dinheiro recolhido 
+	function balanceOfUsina (uint _usinaID) public constant returns(uint _initial, uint vendidos, bool reached, uint _numC) {
+		Usina memory u = usinas[_usinaID];
+		vendidos = u.initialTokenAmount - UsinasTokens[u.ID];
+		_initial = u.initialTokenAmount;
+		_numC = u.numClients;
+		reached = false;
+		if(UsinasTokens[u.ID] >= u.meta*u.initialTokenAmount) reached = true;
 	}
 	
-	// Verificar saldo de tokens de Cliente
-	function balanceOfClient (address _client) public constant returns(uint saldo) {
-		return balances[_client];
+	// Consultar cliente por chave pública
+	function balanceOfClient (address _client) public constant returns(uint8 _cpf,uint saldo, uint uID) {
+		Client memory c = BancoClientes[_client];
+		uID = c.usina;
+		_cpf = c.cpf;
+		saldo = balances[_client];
 	}
 	
 }
