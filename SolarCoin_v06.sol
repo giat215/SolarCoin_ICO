@@ -2,11 +2,10 @@ pragma solidity ^0.4.21;
 
 /**
  *  SolarCoin is an ICO built over the Ethereum Blockchain.
- 	The main goal of the ICO is to build a community of users who
+ 	The main goal of this ICO is to build a community of users who
  	want to invest in the construction of shared photovoltaic solar plants.
  	The ICO is used for crowdfunding and management of the plant
     
-    Conta recebedora: 0x29294CBC636552b197852b53CC1178c5f7CFFB1d
  */
 contract SolarCoin {
 
@@ -17,12 +16,12 @@ contract SolarCoin {
 	event TokenTransferido(uint indexed _from, address indexed _to, uint256 indexed _value);
 
     // Token usefull constants and mappings    
-	string public name;
-	uint8 public decimals;
-	string public symbol;
+	string private name;
+	uint8 private decimals;
+	string private symbol;
 	uint256 public totalSupply;
-	mapping (address => uint256) public balances;
-	mapping (address => mapping (address => uint)) public allowed;
+	mapping (address => uint256) private balances;
+	mapping (address => mapping (address => uint)) private allowed;
 
 	// Crowdfunding section
 
@@ -43,8 +42,8 @@ contract SolarCoin {
 		mapping (uint => Client) clientes;
 	}
 
-	mapping (uint => Usina) public usinas;
-	mapping (address => Client) public bancoClientes;
+	mapping (uint => Usina) private usinas;
+	mapping (address => Client) private bancoClientes;
 	uint public numUsinas;
 
 	// Construtor
@@ -56,8 +55,8 @@ contract SolarCoin {
 		symbol = _symbol;
 	}
 
-	function newUsina (uint _tokenAmount, uint passwd) public returns(bool res) {
-		require(passwd == 12345);
+	function newUsina (uint _tokenAmount, uint _passwd) public returns(bool res) {
+		require(_passwd == 12345);
 		require(balances[msg.sender] >= _tokenAmount);
 		uint usinaID = numUsinas++;
 		Usina storage u = usinas[usinaID];
@@ -91,11 +90,11 @@ contract SolarCoin {
 	}
 
 	// Lista atributos de clientes
-	function statusClient (address _client, uint passwd) public view returns(uint _uID, uint _saldo, string _nome, uint _cpf) {
+	function statusClient (address _client, uint _passwd) public view returns(uint _uID, uint _saldo, string _nome, uint _cpf) {
 		Client memory c = bancoClientes[_client];
 		_uID = c.uID;
 		_saldo = balances[_client];
-		if(passwd == 12345) {
+		if(_passwd == 12345) {
 			_nome = c.nome;
 			_cpf = c.cpf;
 		}
