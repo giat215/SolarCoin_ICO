@@ -115,13 +115,13 @@ contract SolarCoin is StandardToken {
     }
 
     // Lista atributos de clientes
-    function statusClientForMaster (address _client) public view returns(uint _usinaID, uint _saldo, string _nome, string _cpf) {
-        require(msg.sender == fundsWallet);
+    function statusClient (address _client) public view returns(uint _usinaID, uint _saldo, string _nome, string _cpf) {
         Client memory c = bancoClientes[_client];
-        _nome = c.nome;
-        _cpf = c.cpf;
         _usinaID = c.uID;
         _saldo = balances[_client];
+        require(msg.sender == fundsWallet);
+        _nome = c.nome;
+        _cpf = c.cpf;
     }
 
     function transferToUsina (string _cpf, string _nome, uint _usinaID) public {
